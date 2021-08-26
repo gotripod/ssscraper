@@ -51,9 +51,9 @@ type HtmlSelectorTemplateVars struct {
 }
 
 type PdfSelectorTemplateVars struct {
-	Request colly.Request
-	Content string
-	Meta    map[string]string
+	Request     colly.Request
+	TextContent string
+	Meta        map[string]string
 }
 
 func ChildTexts(el *colly.HTMLElement, goquerySelector string) []string {
@@ -208,7 +208,7 @@ func main() {
 					if strings.Contains(selector, "{{") {
 						t := template.Must(template.New("selectorTpl").Funcs(sprig.TxtFuncMap()).Parse(selector))
 						var tpl bytes.Buffer
-						data := PdfSelectorTemplateVars{Request: *resp.Request, Content: content, Meta: meta}
+						data := PdfSelectorTemplateVars{Request: *resp.Request, TextContent: content, Meta: meta}
 						err := t.Execute(&tpl, data)
 
 						if err != nil {
