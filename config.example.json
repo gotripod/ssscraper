@@ -40,7 +40,7 @@
             "title": "{{ .Meta[\"title\"] }}",
             "url": "{{ .Request.URL }}",
             "content": "{{ .TextContent }}",
-            "section": "{{ .Request.URL.Path | regexFind \"\/(KB|news|technical-data|faq|technical-centre|products)\/\" | replace \"/\" \"\" }}"
+            "section": "{{ .Request.URL.Path | regexFind \"\/(insights|work)\/\" | replace \"/\" \"\" }}"
         }
     }
 }
