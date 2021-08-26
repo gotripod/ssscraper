@@ -1,4 +1,4 @@
-SS Scraper
+Super-Simple Scraper
 =
 
 This a very thin layer on top of [Colly](http://go-colly.org/) which allows configuration from a JSON file. The output is JSONL which is ready to be imported into [Typesense](https://typesense.org).
@@ -36,7 +36,6 @@ Developing
 ==
 
 Using VSCode, clone and open the repo directory with the Containers extension installed.
-
 
 Future ideas
 ==
