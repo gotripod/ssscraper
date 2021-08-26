@@ -37,7 +37,7 @@
     "pdf": {
         "enabled": true,
         "selectors": {
-            "title": "{{ .Meta[\"title\"] }}",
+            "title": "{{ index .Meta \"title\" }}",
             "url": "{{ .Request.URL }}",
             "content": "{{ .TextContent }}",
             "section": "{{ .Request.URL.Path | regexFind \"\/(insights|work)\/\" | replace \"/\" \"\" }}"
