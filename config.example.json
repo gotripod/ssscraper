@@ -1,0 +1,46 @@
+{
+    "debug": true,
+    "request": {
+        "timeoutInMs": 2000,
+        "domainGlob": "**",
+        "parallelism": 2,
+        "delayInMs": 300,
+        "randomDelayInMs": 1500
+    },
+    "input": {
+        "startUrl": "https://gotripod.com/",
+        "urlFilters": [
+            "^https://gotripod.com/.*"
+        ],
+        "disallowedUrlFilters": [
+            "^https://gotripod.com/private/.*"
+        ]
+    },
+    "output": {
+        "type": "jsonl",
+        "filename": "documents.jsonl",
+        "webhook": null
+    },
+    "html": {
+        "selectors": {
+            "title": "title",
+            "content": "#content",
+            "metaDescription": "meta[name=\"description\"]",
+            "metaKeywords": "meta[name=\"keywords\"]",
+            "h1": "h1",
+            "h2": "h2",
+            "url": "{{ .Request.URL }}",
+            "section": "{{ .Request.URL.Path | regexFind \"\/(insights|work)\/\" | replace \"/\" \"\" }}",
+            "urlPathSplit": "{{ .Request.URL.Path | splitList \"/\" | join \" \" }}"
+        }
+    },
+    "pdf": {
+        "enabled": true,
+        "selectors": {
+            "title": "{{ .Meta[\"title\"] }}",
+            "url": "{{ .Request.URL }}",
+            "content": "{{ .TextContent }}",
+            "section": "{{ .Request.URL.Path | regexFind \"\/(KB|news|technical-data|faq|technical-centre|products)\/\" | replace \"/\" \"\" }}"
+        }
+    }
+}
