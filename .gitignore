@@ -3,3 +3,5 @@ pdf-cache
 ssscraper
 config.json
 documents.jsonl
+.env
+.secrets

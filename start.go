@@ -66,13 +66,25 @@ func ChildTexts(el *colly.HTMLElement, goquerySelector string) []string {
 }
 
 func loadConfiguration() Configuration {
-	file, _ := os.Open("config.json")
-	defer file.Close()
-	decoder := json.NewDecoder(file)
+	// Use environment variable for configuration if available.
+	// This helps support passing it in when using Docker.
 	configuration := Configuration{}
-	err := decoder.Decode(&configuration)
-	if err != nil {
-		fmt.Println("error:", err)
+	val, found := os.LookupEnv("CONFIG")
+
+	if found {
+		err := json.Unmarshal([]byte(val), &configuration)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+
+		file, _ := os.Open("config.json")
+		defer file.Close()
+		decoder := json.NewDecoder(file)
+		err := decoder.Decode(&configuration)
+		if err != nil {
+			fmt.Println("error:", err)
+		}
 	}
 
 	return configuration

@@ -21,6 +21,14 @@ See the [example configuration](https://github.com/gotripod/ssscraper/blob/maste
 Running
 ==
 
+We have an image on DockerHub, so after installing `Docker` and `jq`, something like this will work:
+
+```
+docker run -it -e "CONFIG=$(cat ./path/to/your/config.json | jq -r tostring)" gotripod/ssscraper
+```
+
+The manual method is:
+
 ```
 docker build -t ssscraper .
 docker run -v `pwd`:/go/src/app -it --rm --name ssscraper-ahoy ssscraper
@@ -35,7 +43,7 @@ go build
 Developing
 ==
 
-Using VSCode, clone and open the repo directory with the Containers extension installed.
+Using VSCode, clone and open the repo directory with the Containers extension installed. 
 
 Future ideas
 ==
