@@ -24,7 +24,7 @@ Running
 We have an image on DockerHub, so after installing `Docker` and `jq`, something like this will work:
 
 ```
-docker run -it -e "CONFIG=$(cat ./path/to/your/config.json | jq -r tostring)" gotripod/ssscraper
+docker run -it -v `pwd`:/go/src/app -e "CONFIG=$(cat ./path/to/your/config.json | jq -r tostring)" gotripod/ssscraper:main
 ```
 
 The manual method is:
