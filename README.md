@@ -48,6 +48,7 @@ Using VSCode, clone and open the repo directory with the Containers extension in
 Future ideas
 ==
 
+- Nested selectors; i.e. select each item from a list on each page
 - Webhook support - POST the output to a URL on completion
 - Different output formats
 - Custom weighting for selectors
