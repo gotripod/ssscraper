@@ -5,3 +5,4 @@ config.json
 documents.jsonl
 .env
 .secrets
+Makefile

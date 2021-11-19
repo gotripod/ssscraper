@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -58,10 +59,23 @@ type PdfSelectorTemplateVars struct {
 
 func ChildTexts(el *colly.HTMLElement, goquerySelector string) []string {
 	var res []string
-	el.DOM.Find(goquerySelector).Each(func(_ int, s *goquery.Selection) {
 
-		res = append(res, strings.TrimSpace(s.Text()))
-	})
+	// we special-case commas in selectors to allow content to be returned in the order specified, rather than document order
+	selectors := strings.Split(goquerySelector, ",")
+
+	for _, sel := range selectors {
+
+		el.DOM.Find(sel).Each(func(_ int, s *goquery.Selection) {
+
+			withoutNewlines := strings.Replace(s.Text(), "\n", "", -1)
+
+			doubleWhiteSpaceRegex := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
+			withoutExtraSpaces := doubleWhiteSpaceRegex.ReplaceAllString(withoutNewlines, " ")
+
+			res = append(res, withoutExtraSpaces)
+		})
+
+	}
 	return res
 }
 
@@ -113,6 +127,11 @@ func regexpFromConfig(input []string) []*regexp.Regexp {
 }
 
 func main() {
+
+	testUrlPtr := flag.String("testUrl", "", "A single URL. When provided, will show the output from that URL only.")
+
+	flag.Parse()
+
 	configuration := loadConfiguration()
 
 	file := createOutputFile()
@@ -170,16 +189,20 @@ func main() {
 			document[key] = val
 		}
 
-		// Write to JSONL as we gather the data, don't build it up in memory
-		err := enc.Encode(document)
+		if *testUrlPtr == "" {
+			// Write to JSONL as we gather the data, don't build it up in memory
+			err := enc.Encode(document)
 
-		if err != nil {
-			log.Fatal(err)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			e.ForEach("a[href]", func(_ int, el *colly.HTMLElement) {
+				e.Request.Visit(el.Attr("href"))
+			})
+		} else {
+			fmt.Println(document)
 		}
-
-		e.ForEach("a[href]", func(_ int, el *colly.HTMLElement) {
-			e.Request.Visit(el.Attr("href"))
-		})
 	})
 
 	if configuration.Pdf.Enabled {
@@ -236,6 +259,10 @@ func main() {
 		})
 	}
 
-	c.Visit(configuration.Input.StartUrl)
+	if *testUrlPtr != "" {
+		c.Visit(*testUrlPtr)
+	} else {
+		c.Visit(configuration.Input.StartUrl)
+	}
 	c.Wait()
 }
