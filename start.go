@@ -53,6 +53,7 @@ type HtmlSelectorTemplateVars struct {
 }
 
 type PdfSelectorTemplateVars struct {
+	Response    colly.Response
 	Request     colly.Request
 	TextContent string
 	Meta        map[string]string
@@ -263,7 +264,7 @@ func main() {
 					if strings.Contains(selector, "{{") {
 						t := template.Must(template.New("selectorTpl").Funcs(sprig.TxtFuncMap()).Parse(selector))
 						var tpl bytes.Buffer
-						data := PdfSelectorTemplateVars{Request: *resp.Request, TextContent: content, Meta: meta}
+						data := PdfSelectorTemplateVars{Request: *resp.Request, Response: *resp, TextContent: content, Meta: meta}
 						err := t.Execute(&tpl, data)
 
 						if err != nil {
