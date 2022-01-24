@@ -1,5 +1,6 @@
 {
     "debug": true,
+    "userAgent": "SSScraper",
     "request": {
         "timeoutInMs": 2000,
         "domainGlob": "**",
@@ -23,7 +24,9 @@
     },
     "html": {
         "selectors": {
+            "id": "{{ .Request.URL }}",
             "title": "title",
+            "statusCode": "{{ .Response.StatusCode }}",
             "content": "#content",
             "metaDescription": "meta[name=\"description\"]",
             "metaKeywords": "meta[name=\"keywords\"]",
@@ -37,6 +40,7 @@
     "pdf": {
         "enabled": true,
         "selectors": {
+            "id": "{{ .Request.URL }}",
             "title": "{{ index .Meta \"title\" }}",
             "url": "{{ .Request.URL }}",
             "content": "{{ .TextContent }}",

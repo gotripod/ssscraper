@@ -40,6 +40,12 @@ go build
 ./ssscraper
 ```
 
+ssscraper can be called with the --testUrl flag:
+
+./ssscraper --testUrl=https://gotripod.com
+
+It will scrape that URL and not follow its links, only output the results for that one page.
+
 Developing
 ==
 

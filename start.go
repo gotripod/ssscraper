@@ -14,7 +14,6 @@ import (
 	"text/template"
 	"time"
 
-	"code.sajari.com/docconv"
 	"github.com/Masterminds/sprig"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
@@ -22,8 +21,9 @@ import (
 )
 
 type Configuration struct {
-	Debug   bool `json:"debug"`
-	Request struct {
+	Debug     bool   `json:"debug"`
+	UserAgent string `json:"userAgent"`
+	Request   struct {
 		TimeoutInMs     int    `json:"timeoutInMs"`
 		DomainGlob      string `json:"domainGlob"`
 		Parallelism     int    `json:"parellelism"`
@@ -48,7 +48,8 @@ type Configuration struct {
 }
 
 type HtmlSelectorTemplateVars struct {
-	Request colly.Request
+	Request  colly.Request
+	Response colly.Response
 }
 
 type PdfSelectorTemplateVars struct {
@@ -145,12 +146,23 @@ func main() {
 		options = append(options, colly.Debugger(&debug.LogDebugger{}))
 	}
 
+	if configuration.UserAgent != "" {
+		log.Println("Adding user agent", configuration.UserAgent)
+		options = append(options, colly.UserAgent(configuration.UserAgent))
+	}
+
 	options = append(options, colly.URLFilters(
 		regexpFromConfig(configuration.Input.UrlFilters)...,
 	))
 
 	options = append(options, colly.DisallowedURLFilters(regexpFromConfig(configuration.Input.DisallowedUrlFilters)...))
-	options = append(options, colly.CacheDir("./cache"))
+
+	// Don't use the cache when testing
+	if *testUrlPtr == "" {
+		options = append(options, colly.CacheDir("./cache"))
+	} else {
+		log.Println("Running with test URL", *testUrlPtr)
+	}
 	options = append(options, colly.Async(true))
 
 	c := colly.NewCollector(options...)
@@ -164,8 +176,12 @@ func main() {
 		RandomDelay: time.Duration(configuration.Request.RandomDelayInMs) * time.Millisecond,
 	})
 
-	c.OnError(func(_ *colly.Response, err error) {
-		log.Println("Something went wrong:", err)
+	c.OnRequest(func(r *colly.Request) {
+		r.Headers.Set("Accept", "*/*")
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		log.Println("Something went wrong:", err, string(r.Body), r.Request.Headers)
 	})
 
 	c.OnHTML("html", func(e *colly.HTMLElement) {
@@ -176,7 +192,7 @@ func main() {
 			if strings.Contains(selector, "{{") {
 				t := template.Must(template.New("selectorTpl").Funcs(sprig.TxtFuncMap()).Parse(selector))
 				var tpl bytes.Buffer
-				data := HtmlSelectorTemplateVars{Request: *e.Request}
+				data := HtmlSelectorTemplateVars{Request: *e.Request, Response: *e.Response}
 				err := t.Execute(&tpl, data)
 
 				if err != nil {
@@ -199,6 +215,7 @@ func main() {
 
 			e.ForEach("a[href]", func(_ int, el *colly.HTMLElement) {
 				e.Request.Visit(el.Attr("href"))
+
 			})
 		} else {
 			fmt.Println(document)
@@ -224,7 +241,7 @@ func main() {
 					log.Fatal(err)
 				}
 
-				res, err := docconv.ConvertPath(pdfFile)
+				bodyResult, metaResult, err := ConvertPDFText(pdfFile)
 
 				content := "PDF could not be parsed"
 				var meta map[string]string
@@ -232,9 +249,12 @@ func main() {
 				if err != nil {
 					log.Print(resp.Request.URL, err)
 				} else {
-					content = res.Body
-					meta = res.Meta
+					content = strings.Replace(bodyResult.body, "\n", " ", -1)
+					doubleWhiteSpaceRegex := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
+					content = doubleWhiteSpaceRegex.ReplaceAllString(content, " ")
+					meta = metaResult.meta
 				}
+				log.Print("selecting content")
 
 				document := make(map[string]string)
 
@@ -254,7 +274,11 @@ func main() {
 					document[key] = val
 				}
 
-				enc.Encode(document)
+				if *testUrlPtr == "" {
+					enc.Encode(document)
+				} else {
+					fmt.Println(document)
+				}
 			}
 		})
 	}
