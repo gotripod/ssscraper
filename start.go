@@ -185,15 +185,17 @@ func main() {
 		log.Println("Something went wrong:", err, string(r.Body), r.Request.Headers)
 	})
 
-	c.OnHTML("html", func(e *colly.HTMLElement) {
+	c.OnHTML("html", func(htmlEl *colly.HTMLElement) {
 		document := make(map[string]string)
+
+		htmlEl.DOM.Find("script,style,link,form").Remove()
 
 		for key, selector := range configuration.Html.Selectors {
 			var val string
 			if strings.Contains(selector, "{{") {
 				t := template.Must(template.New("selectorTpl").Funcs(sprig.TxtFuncMap()).Parse(selector))
 				var tpl bytes.Buffer
-				data := HtmlSelectorTemplateVars{Request: *e.Request, Response: *e.Response}
+				data := HtmlSelectorTemplateVars{Request: *htmlEl.Request, Response: *htmlEl.Response}
 				err := t.Execute(&tpl, data)
 
 				if err != nil {
@@ -201,7 +203,7 @@ func main() {
 				}
 				val = tpl.String()
 			} else {
-				val = strings.Join(ChildTexts(e, selector), " ")
+				val = strings.Join(ChildTexts(htmlEl, selector), " ")
 			}
 			document[key] = val
 		}
@@ -214,8 +216,8 @@ func main() {
 				log.Fatal(err)
 			}
 
-			e.ForEach("a[href]", func(_ int, el *colly.HTMLElement) {
-				e.Request.Visit(el.Attr("href"))
+			htmlEl.ForEach("a[href]", func(_ int, el *colly.HTMLElement) {
+				htmlEl.Request.Visit(el.Attr("href"))
 
 			})
 		} else {
