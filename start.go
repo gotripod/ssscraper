@@ -23,6 +23,12 @@ import (
 type Configuration struct {
 	Debug     bool   `json:"debug"`
 	UserAgent string `json:"userAgent"`
+	HtmlCache    struct {
+		Directory string `json:"directory"`
+	} `json:"htmlCache"`
+	PdfCache struct {
+		Directory string `json:"directory"`
+	} `json:"pdfCache"`
 	Request   struct {
 		TimeoutInMs     int    `json:"timeoutInMs"`
 		DomainGlob      string `json:"domainGlob"`
@@ -160,7 +166,7 @@ func main() {
 
 	// Don't use the cache when testing
 	if *testUrlPtr == "" {
-		options = append(options, colly.CacheDir("./cache"))
+		options = append(options, colly.CacheDir(configuration.HtmlCache.Directory))
 	} else {
 		log.Println("Running with test URL", *testUrlPtr)
 	}
@@ -226,8 +232,8 @@ func main() {
 	})
 
 	if configuration.Pdf.Enabled {
-		if _, err := os.Stat("pdf-cache/"); os.IsNotExist(err) {
-			err := os.Mkdir("pdf-cache/", 0755)
+		if _, err := os.Stat(configuration.PdfCache.Directory); os.IsNotExist(err) {
+			err := os.Mkdir(configuration.PdfCache.Directory, 0755)
 
 			if err != nil {
 				log.Fatal(err)
@@ -238,7 +244,7 @@ func main() {
 			ext := filepath.Ext(resp.Request.URL.Path)
 
 			if ext == ".pdf" {
-				pdfFile := "pdf-cache/" + filepath.Base(resp.Request.URL.Path)
+				pdfFile := configuration.PdfCache.Directory + "/" + filepath.Base(resp.Request.URL.Path)
 				err := resp.Save(pdfFile)
 				if err != nil {
 					log.Fatal(err)
